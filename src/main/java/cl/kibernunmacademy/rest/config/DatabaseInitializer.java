@@ -21,5 +21,4 @@ public class DatabaseInitializer {
     return DriverManager.getConnection(dbUrl, user, pass);
   }
 
-
 }
