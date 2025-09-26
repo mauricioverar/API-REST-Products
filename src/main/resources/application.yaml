@@ -26,3 +26,25 @@ logging:
   level:
     org:
       springframework: INFO
+      hibernate:
+        SQL: DEBUG
+        orm:
+          jdbc:
+            bind: TRACE
+          schema: DEBUG
+        tool:
+          schema: DEBUG
+
+security:
+  auth:
+    registration-enabled: true
+  jwt:
+    secret: ${SECURITY_JWT_SECRET:changemechangemechangemechangeme}
+    issuer: apirest
+    access-ttl: 15m
+    refresh-ttl: 7d
+    refresh-enabled: true
+    denylist-enabled: false
+  cors:
+    allowed-origins:
+      - http://localhost:3000

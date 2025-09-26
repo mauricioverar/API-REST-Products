@@ -3,6 +3,7 @@ package cl.kibernunmacademy.rest.security.controller;
 import java.net.URI;
 import java.util.Set;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -61,41 +62,50 @@ public class AuthController {
   }
 
   @PostMapping("/register")
+  public ResponseEntity<?> register(@Valid @RequestBody RegisterRequest request) {
+    System.out.println("Register");
+    System.out.println("Attempting register for " + request.getEmail());
 
-  public ResponseEntity<UserRegistrationResponse> register(@Valid @RequestBody RegisterRequest request) {
+    try {
+      if (!props.getAuth().isRegistrationEnabled()) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Registration is disabled");//
+      }
 
-    if (!props.getAuth().isRegistrationEnabled()) {
-      return ResponseEntity.notFound().build();
+      if (userRepo.existsByEmail(request.getEmail())) {
+        return ResponseEntity.status(HttpStatus.CONFLICT).body("Email already exists");
+      }
+
+      UserAccount ua = new UserAccount();
+      ua.setUsername(request.getUsername());
+      ua.setUserlastname(request.getUserlastname());
+      ua.setRut(request.getRut());
+      ua.setEmail(request.getEmail());
+      ua.setPassword(passwordEncoder.encode(request.getPassword()));
+      ua.setEnabled(true);
+      ua.setRoles(Set.of(Role.ROLE_USER));
+
+      UserAccount savedUser = userRepo.save(ua);
+      System.out.println("User saved with ID: " + savedUser.getId());
+
+      URI location = ServletUriComponentsBuilder
+          .fromCurrentRequest()
+          .path("/{id}")
+          .buildAndExpand(savedUser.getId())
+          .toUri();
+
+      return ResponseEntity.created(location)
+          .body(new UserRegistrationResponse(savedUser.getId(), savedUser.getEmail()));
+    } catch (Exception ex) {
+      ex.printStackTrace();
+      return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+          .body("Error: " + ex.getMessage());
     }
-    if (userRepo.existsByEmail(request.getEmail())) {
-      throw new IllegalArgumentException("Email already exists");
-    }
-
-    UserAccount ua = new UserAccount();
-    ua.setUsername(request.getUsername());
-    ua.setUserlastname(request.getUserlastname());
-    ua.setRut(request.getRut());
-    ua.setEmail(request.getEmail());
-    ua.setPassword(passwordEncoder.encode(request.getPassword()));
-    ua.setEnabled(true);
-    ua.setRoles(Set.of(Role.ROLE_USER));
-
-    UserAccount savedUser = userRepo.save(ua);
-
-    UserRegistrationResponse response = new UserRegistrationResponse(savedUser.getId(), savedUser.getEmail());
-
-    URI location = ServletUriComponentsBuilder
-        .fromCurrentRequest()
-        .path("/{id}")
-        .buildAndExpand(savedUser.getId())
-        .toUri();
-
-    return ResponseEntity.created(location).body(response);
-
   }
 
   @PostMapping("/refresh")
   public ResponseEntity<AuthResponse> refresh(@RequestBody String refreshToken) {
+    System.out.println("Refresh token received: {}" + refreshToken);
+
     if (!props.getJwt().isRefreshEnabled()) {
       return ResponseEntity.notFound().build();
     }

@@ -8,6 +8,7 @@ import jakarta.persistence.*;
 @Entity
 @Table(name = "users")
 public class UserAccount {
+  
 
   @Id
   @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -16,7 +17,7 @@ public class UserAccount {
   @Column(nullable = false, length = 100)
   private String username;
 
-  @Column(unique = true, nullable = false, length = 100)
+  @Column(nullable = false, length = 100)
   private String userlastname;
 
   @Column(unique = true, nullable = false, length = 12)
@@ -55,6 +56,7 @@ public class UserAccount {
   }
 
   public void setUsername(String username) {
+    System.out.println("username" + username);
     this.username = username;
   }
 
